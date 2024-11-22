@@ -5,4 +5,3 @@ ollama
 pyyaml
 beautifulsoup4
 lxml
-python-dotenv
