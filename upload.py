@@ -1,10 +1,58 @@
-import json
 import os
 import PyPDF2
 import re
+import requests
 import sys
 
-# Fonction pour ajouter du texte sans doublon
+import requests
+
+def download_pdf(drive_url):
+
+    output_file = "./file.pdf"
+    # Étape 1 : Extraire FILE_ID de l'URL
+    if "drive.google.com" in drive_url:
+        try:
+            file_id = drive_url.split("/d/")[1].split("/")[0]
+        except IndexError:
+            print("URL incorrecte. Assurez-vous qu'elle provient de Google Drive.")
+            return
+    else:
+        print("Ce script fonctionne uniquement avec des liens Google Drive.")
+        return
+    
+    # Étape 2 : Créer l'URL de téléchargement direct
+    download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    
+    try:
+        # Étape 3 : Envoyer la requête GET pour télécharger le fichier
+        response = requests.get(download_url, stream=True)
+        response.raise_for_status()  # Vérifie les erreurs HTTP
+
+        # Étape 4 : Écrire le contenu dans un fichier local
+        with open(output_file, "wb") as file:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    file.write(chunk)
+        print(f"Fichier téléchargé avec succès : {output_file}")
+    
+    except requests.exceptions.RequestException as e:
+        print(f"Une erreur s'est produite lors du téléchargement : {e}")
+
+def delete_pdf():
+
+    # Chemin du fichier à supprimer
+    file_path = "./file.pdf"
+
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"Le fichier '{file_path}' a été supprimé avec succès.")
+        else:
+            print(f"Le fichier '{file_path}' n'existe pas.")
+    except Exception as e:
+        print(f"Une erreur s'est produite lors de la suppression : {e}")
+
+
 def append_unique_text(text_to_add):
     file_path = "vault.txt"
     
@@ -25,7 +73,9 @@ def append_unique_text(text_to_add):
         return True
 
 # Fonction pour convertir le PDF en texte
-def convert_pdf_to_text(file_path):
+def convert_pdf_to_text(url):
+    download_pdf(url)
+    file_path = "file.pdf"
     # Vérifie si le fichier existe
     if not os.path.isfile(file_path):
         print(f"Le fichier '{file_path}' n'existe pas. Veuillez fournir un chemin valide.")
@@ -63,6 +113,7 @@ def convert_pdf_to_text(file_path):
             for chunk in chunks:
                 append_unique_text(chunk)
             print(f"Le contenu à apprendre été ajouté à 'vault.txt'.")
+            delete_pdf()
 
     except Exception as e:
         print(f"Une erreur est survenue : {e}")
